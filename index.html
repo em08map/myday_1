@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Day</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F3EE; --surface: #FFFFFF; --surface2: #EFEDE7;
+  --border: rgba(0,0,0,0.08); --border2: rgba(0,0,0,0.14);
+  --text: #1A1916; --muted: #7A7770; --faint: #B0ADA7;
+  --accent: #3D5A80; --accent-light: #E8EEF5;
+  --rolled: #8B5E3C; --rolled-light: #F5EDE5;
+  --done-text: #A0ADA8; --green: #2E7D5A;
+  --tag-work: #3D5A80; --tag-work-bg: #E8EEF5;
+  --tag-staff: #7A4F8A; --tag-staff-bg: #F2EBF5;
+  --tag-home: #3A7D5A; --tag-home-bg: #E5F2EB;
+  --tag-me: #8B5E3C; --tag-me-bg: #F5EDE5;
+  --tag-school: #5A6E3A; --tag-school-bg: #EBF0E2;
+  --tag-long: #4A6670; --tag-long-bg: #E5EEF0;
+  --overdue: #C0392B; --overdue-bg: #FDEAEA;
+  --radius: 10px; --radius-sm: 6px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+
+.shell { display: flex; min-height: 100vh; }
+.sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 24px 0; position: fixed; top: 0; left: 0; width: 230px; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; z-index: 10; }
+.main { padding: 32px 40px; margin-left: 230px; flex: 1; min-width: 0; max-width: 900px; }
+
+.logo { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; letter-spacing: 0.06em; padding: 0 24px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.logo span { color: var(--faint); font-weight: 300; }
+.nav-section { padding: 0 12px; margin-bottom: 6px; }
+.nav-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); font-family: 'DM Mono', monospace; padding: 0 12px 6px; }
+.nav-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; background: none; border: none; border-radius: var(--radius-sm); color: var(--muted); font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer; text-align: left; transition: all .15s; }
+.nav-btn:hover { background: var(--surface2); color: var(--text); }
+.nav-btn.active { background: var(--accent-light); color: var(--accent); font-weight: 500; }
+.nav-btn .icon { font-size: 15px; width: 18px; text-align: center; }
+.nav-btn .badge { margin-left: auto; font-size: 10px; font-family: 'DM Mono', monospace; background: var(--rolled-light); color: var(--rolled); padding: 1px 6px; border-radius: 20px; }
+.sidebar-footer { margin-top: auto; padding: 16px 24px 0; border-top: 1px solid var(--border); }
+.streak { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+.streak strong { color: var(--text); }
+#sync-status { font-size: 11px; font-family: 'DM Mono', monospace; margin-top: 5px; min-height: 16px; }
+
+.page-header { margin-bottom: 28px; }
+.day-label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); margin-bottom: 4px; }
+.day-title { font-size: 26px; font-weight: 300; letter-spacing: -0.02em; }
+.day-title strong { font-weight: 500; }
+.day-stats { display: flex; gap: 20px; margin-top: 10px; }
+.stat { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
+.stat span { color: var(--text); font-weight: 500; }
+
+.focus-strip { background: var(--accent); color: #fff; border-radius: var(--radius); padding: 14px 18px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; font-size: 13px; }
+.focus-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7; white-space: nowrap; }
+.focus-task { flex: 1; opacity: 0.95; }
+.focus-empty { opacity: 0.6; font-style: italic; }
+
+.rollover-banner { background: var(--rolled-light); border: 1px solid rgba(139,94,60,0.2); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--rolled); }
+
+.section { margin-bottom: 28px; }
+.section-header { margin-bottom: 12px; }
+.section-title { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+.add-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.add-row input { flex: 1; height: 36px; padding: 0 12px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; transition: border-color .15s; }
+.add-row input:focus { border-color: var(--accent); }
+.add-row input::placeholder { color: var(--faint); }
+.btn { height: 36px; padding: 0 16px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--surface); color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; white-space: nowrap; transition: all .15s; }
+.btn:hover { background: var(--surface2); color: var(--text); }
+.btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-accent:hover { background: #2d4a6e; color: #fff; }
+.btn-sm { height: 28px; padding: 0 12px; font-size: 12px; }
+
+.task-list { display: flex; flex-direction: column; gap: 4px; }
+.task-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; user-select: none; transition: border-color .15s; }
+.task-item:hover { border-color: var(--border2); }
+.task-item.is-done { opacity: 0.5; }
+.task-item.is-rolled { background: var(--rolled-light); border-color: rgba(139,94,60,0.15); }
+.task-check { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+.task-item.is-done .task-check { background: var(--green); border-color: var(--green); color: #fff; }
+.task-item.is-rolled .task-check { border-color: var(--rolled); }
+.task-text { flex: 1; font-size: 13px; }
+.task-item.is-done .task-text { text-decoration: line-through; color: var(--done-text); }
+.task-edit-input { flex: 1; font-size: 13px; font-family: 'DM Sans', sans-serif; background: none; border: none; border-bottom: 1.5px solid var(--accent); outline: none; color: var(--text); padding: 0; line-height: inherit; }
+.task-item.is-editing { border-color: var(--accent); background: var(--accent-light); cursor: default; }
+.task-rolled-badge { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--rolled); background: rgba(139,94,60,0.1); padding: 1px 6px; border-radius: 20px; white-space: nowrap; }
+.task-tag { font-size: 10px; padding: 2px 8px; border-radius: 20px; white-space: nowrap; font-family: 'DM Mono', monospace; }
+.tag-work { background: var(--tag-work-bg); color: var(--tag-work); }
+.tag-staff { background: var(--tag-staff-bg); color: var(--tag-staff); }
+.tag-home { background: var(--tag-home-bg); color: var(--tag-home); }
+.tag-me { background: var(--tag-me-bg); color: var(--tag-me); }
+.tag-school { background: var(--tag-school-bg); color: var(--tag-school); }
+.tag-long { background: var(--tag-long-bg); color: var(--tag-long); }
+.task-deadline { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--faint); white-space: nowrap; padding: 2px 7px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); }
+.task-deadline.overdue { color: var(--overdue); background: var(--overdue-bg); border-color: rgba(192,57,43,0.2); }
+.task-deadline.due-soon { color: var(--rolled); background: var(--rolled-light); border-color: rgba(139,94,60,0.2); }
+.deadline-btn { height: 36px; width: 36px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--surface2); cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; opacity: 0.5; transition: all .15s; position: relative; }
+.deadline-btn:hover { opacity: 1; border-color: var(--accent); }
+.deadline-btn.has-date { opacity: 1; background: var(--accent-light); border-color: var(--accent); }
+.deadline-btn input[type=date] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+/* Section manager */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.section-header-left { display: flex; align-items: center; gap: 10px; }
+.section-drag-handle { cursor: grab; color: var(--faint); font-size: 14px; line-height: 1; user-select: none; }
+.section-drag-handle:active { cursor: grabbing; }
+.section-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+.section:hover .section-actions { opacity: 1; }
+.section-action-btn { background: none; border: none; cursor: pointer; color: var(--faint); font-size: 12px; padding: 3px 6px; border-radius: 4px; transition: all .15s; }
+.section-action-btn:hover { background: var(--surface2); color: var(--text); }
+.section.dragging { opacity: 0.4; }
+.section.drag-over { border-top: 2px solid var(--accent); }
+/* Colour swatches */
+.colour-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.colour-swatch { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all .15s; }
+.colour-swatch:hover, .colour-swatch.selected { border-color: var(--text); transform: scale(1.15); }
+
+.task-priority { font-size: 13px; cursor: pointer; opacity: 0.3; transition: opacity .1s; line-height: 1; }
+.task-priority:hover, .task-priority.on { opacity: 1; color: #c8a43a; }
+.task-del { opacity: 0; background: none; border: none; color: var(--faint); cursor: pointer; font-size: 18px; padding: 0 2px; line-height: 1; transition: opacity .1s; }
+.task-item:hover .task-del { opacity: 1; }
+.task-del:hover { color: #c0392b; }
+.task-move-wrap { position: relative; display: inline-flex; }
+.task-move { opacity: 0; background: none; border: none; color: var(--faint); cursor: pointer; font-size: 13px; padding: 0 2px; line-height: 1; transition: opacity .1s; }
+.task-item:hover .task-move { opacity: 1; }
+.task-move:hover { color: var(--accent); }
+.move-dropdown { display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-sm); box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 50; min-width: 160px; padding: 4px 0; }
+.move-dropdown.open { display: block; }
+.move-dropdown-item { display: flex; align-items: center; gap: 8px; padding: 7px 14px; font-size: 12px; cursor: pointer; color: var(--text); white-space: nowrap; transition: background .1s; }
+.move-dropdown-item:hover { background: var(--surface2); }
+.move-dropdown-item.current { opacity: 0.4; cursor: default; pointer-events: none; }
+.move-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.empty-state { padding: 14px 12px; color: var(--faint); font-size: 13px; font-style: italic; }
+
+.triage-area { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.triage-tabs { display: flex; border-bottom: 1px solid var(--border); }
+.triage-tab { padding: 10px 16px; font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none; transition: all .15s; }
+.triage-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.triage-pane { display: none; padding: 16px; }
+.triage-pane.active { display: block; }
+.triage-paste { width: 100%; min-height: 140px; padding: 12px; border: 1px dashed var(--border2); border-radius: var(--radius-sm); background: var(--surface2); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; resize: vertical; outline: none; line-height: 1.6; }
+.triage-paste:focus { border-color: var(--accent); border-style: solid; }
+.triage-paste::placeholder { color: var(--faint); }
+.triage-saved-text { font-size: 13px; color: var(--text); white-space: pre-wrap; line-height: 1.7; }
+.triage-toolbar { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.triage-date-label { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--faint); margin-bottom: 8px; }
+
+.action-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.action-item.added { opacity: 0.4; }
+.action-item-text { flex: 1; font-size: 13px; }
+.action-item.added .action-item-text { text-decoration: line-through; color: var(--faint); }
+.action-tag-select { height: 28px; padding: 0 6px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--surface2); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 12px; outline: none; cursor: pointer; }
+.action-add-btn { height: 28px; padding: 0 12px; border: 1px solid var(--accent); border-radius: var(--radius-sm); background: var(--accent); color: #fff; font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; white-space: nowrap; transition: background .15s; }
+.action-add-btn:hover { background: #2d4a6e; }
+.action-add-btn.done-btn { background: var(--green); border-color: var(--green); cursor: default; }
+
+.history-day { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+.history-day-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer; transition: background .15s; }
+.history-day-header:hover { background: var(--surface2); }
+.history-day-date { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; }
+.history-day-summary { font-size: 12px; color: var(--muted); display: flex; gap: 12px; }
+.history-day-body { display: none; padding: 12px 16px; border-top: 1px solid var(--border); }
+.history-day-body.open { display: block; }
+.history-task-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+.history-task-row:last-child { border-bottom: none; }
+.h-done { color: var(--green); font-size: 12px; }
+.h-rolled { color: var(--rolled); font-size: 12px; }
+.h-skip { color: var(--faint); font-size: 12px; }
+.chev { font-size: 12px; color: var(--faint); transition: transform .2s; display: inline-block; }
+.chev.open { transform: rotate(180deg); }
+
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; align-items: center; justify-content: center; }
+.overlay.show { display: flex; }
+.modal { background: var(--surface); border-radius: var(--radius); padding: 24px; width: 460px; max-width: 92vw; }
+.modal h3 { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+.modal p { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+#signin-screen { display: flex; min-height: 100vh; align-items: center; justify-content: center; background: var(--bg); }
+.signin-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px; width: 420px; max-width: 92vw; }
+.signin-logo { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; margin-bottom: 8px; }
+.signin-logo span { color: var(--faint); font-weight: 300; }
+.signin-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
+.signin-step { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+.signin-step a { color: var(--accent); }
+.step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.token-input { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border2); border-radius: var(--radius-sm); background: var(--surface2); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; outline: none; margin: 16px 0 10px; }
+.token-input:focus { border-color: var(--accent); }
+.signin-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 44px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer; transition: background .15s; }
+.signin-btn:hover { background: #2d4a6e; }
+.signin-error { font-size: 12px; color: #c0392b; margin-top: 10px; min-height: 16px; }
+.signin-note { font-size: 11px; color: var(--faint); margin-top: 16px; line-height: 1.7; }
+
+.view { display: none; }
+.view.active { display: block; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+@media (max-width: 680px) {
+  .sidebar { width: 100%; height: auto; position: relative; flex-direction: row; flex-wrap: wrap; padding: 10px 12px; border-right: none; border-bottom: 1px solid var(--border); overflow: visible; }
+  .main { margin-left: 0; padding: 20px 16px; }
+  .shell { flex-direction: column; }
+  .logo { padding: 0 16px 0 0; border-bottom: none; margin-bottom: 0; }
+  .nav-label { display: none; }
+  .nav-btn { padding: 6px 8px; font-size: 12px; }
+  .sidebar-footer { border-top: none; padding: 0; margin-left: auto; align-self: center; }
+  .day-title { font-size: 22px; }
+  .add-row { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<!-- SIGN-IN -->
+<div id="signin-screen">
+  <div class="signin-card">
+    <div class="signin-logo">my<span>/</span>day</div>
+    <div class="signin-sub">Your tasks sync across all your devices using a private file in your GitHub account. One-time setup, takes 2 minutes.</div>
+
+    <div class="signin-step">
+      <span class="step-num">1</span>
+      <span>Go to <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a> and sign in if needed</span>
+    </div>
+    <div class="signin-step">
+      <span class="step-num">2</span>
+      <span>Give it a name like <strong>MyDay</strong>, scroll down and tick the <strong>gist</strong> checkbox, then click <strong>Generate token</strong></span>
+    </div>
+    <div class="signin-step">
+      <span class="step-num">3</span>
+      <span>Copy the token (starts with <code style="font-family:'DM Mono',monospace;font-size:12px">ghp_</code>) and paste it below</span>
+    </div>
+
+    <input class="token-input" type="password" id="token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
+    <button class="signin-btn" onclick="doSignIn()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.2 11.38.6.1.82-.26.82-.57v-2c-3.34.72-4.04-1.61-4.04-1.61-.54-1.38-1.33-1.75-1.33-1.75-1.09-.74.08-.73.08-.73 1.2.08 1.84 1.24 1.84 1.24 1.07 1.83 2.8 1.3 3.48 1 .1-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 3-.4c1.02 0 2.04.13 3 .4 2.28-1.55 3.29-1.23 3.29-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.21.68.82.57C20.56 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      Connect with GitHub
+    </button>
+    <div class="signin-error" id="signin-error"></div>
+    <div class="signin-note">Your token is stored only in this browser. Your data is saved to a secret Gist in your own GitHub account — only you can see it. GitHub is free.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-shell" style="display:none">
+<div class="shell">
+
+  <nav class="sidebar">
+    <div class="logo">my<span>/</span>day</div>
+
+    <div class="nav-section">
+      <div class="nav-label">Views</div>
+      <button class="nav-btn active" onclick="showView('today')" id="nav-today">
+        <span class="icon">◈</span> Today
+        <span class="badge" id="rolled-badge" style="display:none"></span>
+      </button>
+      <button class="nav-btn" onclick="showView('inbox')" id="nav-inbox">
+        <span class="icon">◎</span> Inbox triage
+      </button>
+      <button class="nav-btn" onclick="showView('history')" id="nav-history">
+        <span class="icon">◷</span> History
+      </button>
+    </div>
+
+    <div class="nav-section" style="margin-top:6px">
+      <div class="nav-label">Quick add</div>
+      <div id="sidebar-quick-add"></div>
+    </div>
+
+    <div class="nav-section" style="margin-top:6px">
+      <div class="nav-label">Sections</div>
+      <button class="nav-btn" onclick="openSectionManager()"><span class="icon">⊞</span> Manage sections</button>
+    </div>
+
+    <div class="nav-section" style="margin-top:6px">
+      <div class="nav-label">End of day</div>
+      <button class="nav-btn" onclick="endOfDay()"><span class="icon">↻</span> Close day & roll over</button>
+    </div>
+
+    <div class="nav-section" style="margin-top:6px">
+      <div class="nav-label">Backup</div>
+      <button class="nav-btn" onclick="exportData()"><span class="icon">↓</span> Export backup</button>
+      <button class="nav-btn" onclick="document.getElementById('import-file').click()"><span class="icon">↑</span> Restore backup</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="streak" id="streak-display"></div>
+      <div id="sync-status"></div>
+      <button class="nav-btn" style="padding-left:0;margin-top:8px" onclick="signOut()"><span class="icon">→</span> Sign out</button>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- TODAY -->
+    <div class="view active" id="view-today">
+      <div class="page-header">
+        <div class="day-label" id="day-label"></div>
+        <div class="day-title" id="day-title"></div>
+        <div class="day-stats" id="day-stats"></div>
+      </div>
+
+      <div class="focus-strip">
+        <div class="focus-label">Focus</div>
+        <div id="focus-task-text" class="focus-task"></div>
+      </div>
+
+      <div class="rollover-banner" id="rollover-banner" style="display:none">
+        <span style="font-size:16px">↻</span>
+        <div><strong id="rollover-count"></strong> tasks carried forward from yesterday</div>
+      </div>
+
+      <div id="sections-container"></div>
+    </div>
+
+    <!-- INBOX -->
+    <div class="view" id="view-inbox">
+      <div class="page-header">
+        <div class="day-label">Inbox triage</div>
+        <div class="day-title">Copilot <strong>inbox summary</strong></div>
+      </div>
+      <div class="triage-area">
+        <div class="triage-tabs">
+          <button class="triage-tab active" onclick="triageTab('paste',this)">Paste today's triage</button>
+          <button class="triage-tab" onclick="triageTab('saved',this)">Saved</button>
+        </div>
+        <div class="triage-pane active" id="tpane-paste">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Paste Copilot's inbox summary below. Action items are detected automatically so you can add them straight to your task list.</p>
+          <textarea class="triage-paste" id="triage-input" placeholder="Paste Copilot's inbox triage here..." oninput="previewActions()"></textarea>
+          <div id="action-preview" style="display:none;margin-top:14px">
+            <div style="font-size:11px;font-family:'DM Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Detected action items — click to add</div>
+            <div id="action-items-list" style="display:flex;flex-direction:column;gap:6px"></div>
+            <div style="margin-top:10px;font-size:12px;color:var(--faint)">Anything missing? Add it manually from the Today view.</div>
+          </div>
+          <div class="triage-toolbar">
+            <button class="btn btn-sm" onclick="clearTriage()">Clear</button>
+            <button class="btn btn-accent btn-sm" onclick="saveTriage()">Save triage</button>
+          </div>
+        </div>
+        <div class="triage-pane" id="tpane-saved">
+          <div id="triage-saved-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="view" id="view-history">
+      <div class="page-header">
+        <div class="day-label">All days</div>
+        <div class="day-title"><strong>History</strong></div>
+      </div>
+      <div id="history-list"></div>
+    </div>
+
+  </main>
+</div>
+</div>
+
+
+<!-- Section manager modal -->
+<div class="overlay" id="section-manager-overlay">
+  <div class="modal" style="width:520px">
+    <h3>Manage sections</h3>
+    <p>Drag to reorder. Add custom sections for projects or anything else.</p>
+    <div id="sm-section-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;max-height:320px;overflow-y:auto"></div>
+    <div style="border-top:1px solid var(--border);padding-top:16px">
+      <div style="font-size:12px;font-weight:500;margin-bottom:8px">Add new section</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="sm-new-name" placeholder="Section name..." style="flex:1;height:36px;padding:0 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none" onkeydown="if(event.key==='Enter')addCustomSection()"/>
+      </div>
+      <div class="colour-grid" id="sm-colour-grid"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" onclick="closeOverlay('section-manager-overlay')">Done</button>
+      <button class="btn btn-accent btn-sm" onclick="addCustomSection()">+ Add section</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit section modal -->
+<div class="overlay" id="edit-section-overlay">
+  <div class="modal" style="width:400px">
+    <h3>Edit section</h3>
+    <input id="edit-section-name" style="width:100%;height:38px;padding:0 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;margin-bottom:12px" onkeydown="if(event.key==='Enter')saveEditSection()"/>
+    <div class="colour-grid" id="edit-colour-grid"></div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" onclick="closeOverlay('edit-section-overlay')">Cancel</button>
+      <button class="btn btn-accent btn-sm" onclick="saveEditSection()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="overlay" id="eod-overlay">
+  <div class="modal">
+    <h3>Close today & roll over</h3>
+    <p id="eod-msg"></p>
+    <div id="eod-detail" style="font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:8px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" onclick="closeOverlay('eod-overlay')">Cancel</button>
+      <button class="btn btn-accent btn-sm" onclick="confirmEndOfDay()">Roll over unfinished tasks →</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="quickadd-overlay">
+  <div class="modal">
+    <h3 id="qa-title">Add task</h3>
+    <div class="add-row" style="margin-bottom:10px">
+      <input id="qa-input" placeholder="What needs doing?" onkeydown="if(event.key==='Enter')confirmQuickAdd();if(event.key==='Escape')closeOverlay('quickadd-overlay')"/>
+      <button class="btn btn-accent" onclick="confirmQuickAdd()">Add</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="font-size:12px;color:var(--muted)">Deadline (optional)</span>
+      <div class="deadline-btn" id="dbtn-qa" title="Set deadline"><span>📅</span><input type="date" id="qa-deadline" onchange="deadlineChanged('qa',this)"></div>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="qa-tag-pills"></div>
+  </div>
+</div>
+
+<div class="overlay" id="import-overlay">
+  <div class="modal">
+    <h3>Restore backup</h3>
+    <p>This merges the backup into your current data. Existing days are kept; backup fills in gaps.</p>
+    <div id="import-preview" style="font-size:13px;color:var(--muted)"></div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" onclick="closeOverlay('import-overlay')">Cancel</button>
+      <button class="btn btn-accent btn-sm" onclick="confirmImport()">Restore →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// GitHub Gist storage
+// ══════════════════════════════════════════
+const GIST_FILE = 'myday-data.json';
+let _token = null, _gistId = null, _db = {}, _saveTimer = null;
+
+const LC = {
+  get:(k,d)=>{try{const v=localStorage.getItem('md__'+k);return v!==null?JSON.parse(v):d;}catch(e){return d;}},
+  set:(k,v)=>{try{localStorage.setItem('md__'+k,JSON.stringify(v));}catch(e){}},
+  del:(k)=>{try{localStorage.removeItem('md__'+k);}catch(e){}}
+};
+
+function dbGet(k,d){return(k in _db)?_db[k]:d;}
+function dbSet(k,v){_db[k]=v;scheduleSave();}
+function scheduleSave(){clearTimeout(_saveTimer);_saveTimer=setTimeout(saveToGist,1500);}
+
+async function saveToGist(){
+  if(!_token)return;
+  setSyncStatus('syncing');
+  try{
+    const body={files:{[GIST_FILE]:{content:JSON.stringify(_db)}}};
+    const url=_gistId?`https://api.github.com/gists/${_gistId}`:'https://api.github.com/gists';
+    const method=_gistId?'PATCH':'POST';
+    if(!_gistId){body.description='My Day tracker data';body.public=false;}
+    const res=await fetch(url,{method,headers:{Authorization:`token ${_token}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!res.ok)throw new Error(await res.text());
+    const data=await res.json();
+    if(!_gistId){_gistId=data.id;LC.set('gist_id',_gistId);}
+    setSyncStatus('saved');
+  }catch(e){console.error('Save failed',e);setSyncStatus('error');}
+}
+
+async function loadFromGist(){
+  if(!_token)return;
+  setSyncStatus('syncing');
+  try{
+    const savedId=LC.get('gist_id',null);
+    if(savedId){
+      const res=await fetch(`https://api.github.com/gists/${savedId}`,{headers:{Authorization:`token ${_token}`}});
+      if(res.ok){
+        const data=await res.json();
+        const file=data.files[GIST_FILE];
+        if(file){_db=JSON.parse(file.content);_gistId=savedId;setSyncStatus('saved');return;}
+      }
+    }
+    // Search gists for our file
+    const lr=await fetch('https://api.github.com/gists?per_page=100',{headers:{Authorization:`token ${_token}`}});
+    if(lr.ok){
+      const gists=await lr.json();
+      const found=gists.find(g=>g.files[GIST_FILE]);
+      if(found){
+        _gistId=found.id;LC.set('gist_id',_gistId);
+        const r2=await fetch(`https://api.github.com/gists/${_gistId}`,{headers:{Authorization:`token ${_token}`}});
+        const d2=await r2.json();
+        _db=JSON.parse(d2.files[GIST_FILE].content);
+        setSyncStatus('saved');return;
+      }
+    }
+    // New user — migrate from old localStorage if anything
+    _db={};
+    const oldDays=LC.get('days',[]);
+    if(oldDays.length){
+      _db.days=oldDays;
+      oldDays.forEach(d=>{
+        const t=LC.get('tasks_'+d,null);if(t!==null)_db['tasks_'+d]=t;
+        const tr=LC.get('triage_'+d,null);if(tr!==null)_db['triage_'+d]=tr;
+        const r=LC.get('rolled_to_'+d,null);if(r!==null)_db['rolled_to_'+d]=r;
+      });
+      const lc=LC.get('last_closed',null);if(lc)_db.last_closed=lc;
+    }
+    await saveToGist();
+  }catch(e){console.error('Load failed',e);setSyncStatus('error');_db={};}
+}
+
+function setSyncStatus(s){
+  const el=document.getElementById('sync-status');if(!el)return;
+  if(s==='syncing'){el.textContent='↻ saving...';el.style.color='var(--faint)';}
+  if(s==='saved'){el.textContent='✓ synced';el.style.color='var(--green)';}
+  if(s==='error'){el.textContent='⚠ offline';el.style.color='var(--rolled)';}
+}
+
+async function doSignIn(){
+  const t=document.getElementById('token-input').value.trim();
+  if(!t){document.getElementById('signin-error').textContent='Please paste your token first.';return;}
+  document.getElementById('signin-error').textContent='Connecting...';
+  try{
+    const res=await fetch('https://api.github.com/user',{headers:{Authorization:`token ${t}`}});
+    if(!res.ok)throw new Error('bad token');
+    _token=t;LC.set('gh_token',_token);
+    document.getElementById('signin-screen').style.display='none';
+    document.getElementById('app-shell').style.display='block';
+    await loadFromGist();
+    finishInit();
+  }catch(e){document.getElementById('signin-error').textContent='Could not connect — check your token and try again.';}
+}
+
+function signOut(){
+  LC.del('gh_token');LC.del('gist_id');_token=null;_gistId=null;_db={};
+  document.getElementById('app-shell').style.display='none';
+  document.getElementById('signin-screen').style.display='flex';
+  document.getElementById('token-input').value='';
+}
+
+// ══════════════════════════════════════════
+// Sections — dynamic, user-configurable
+// ══════════════════════════════════════════
+const DEFAULT_SECTIONS = [
+  { id:'work',   label:'Work',         colour:'#3D5A80', fixed:true },
+  { id:'staff',  label:'Staff actions',colour:'#7A4F8A', fixed:true },
+  { id:'home',   label:'Home',         colour:'#3A7D5A', fixed:true },
+  { id:'school', label:'School / kids',colour:'#5A6E3A', fixed:true },
+  { id:'me',     label:'Me',           colour:'#8B5E3C', fixed:true },
+  { id:'long',   label:'Long term',    colour:'#4A6670', fixed:true },
+];
+
+const SECTION_COLOURS = [
+  '#3D5A80','#7A4F8A','#3A7D5A','#5A6E3A','#8B5E3C','#4A6670',
+  '#C0392B','#D35400','#8E44AD','#16A085','#2980B9','#7F8C8D',
+  '#6C3483','#1A5276','#0E6655','#784212',
+];
+
+function getSections() {
+  const saved = dbGet('sections', null);
+  return saved || DEFAULT_SECTIONS;
+}
+function setSections(arr) { dbSet('sections', arr); }
+
+// Legacy compat — TL still used by quick-add tag pills
+function getTL() {
+  const s = {}; getSections().forEach(sec => { s[sec.id] = sec.label; }); return s;
+}
+
+// ══════════════════════════════════════════
+// Render sections dynamically
+// ══════════════════════════════════════════
+function renderSections() {
+  const container = document.getElementById('sections-container');
+  const sections = getSections().filter(s => !s.hidden);
+  container.innerHTML = sections.map(sec => sectionHTML(sec)).join('');
+  initDragDrop();
+  // Update sidebar quick add
+  const qa = document.getElementById('sidebar-quick-add');
+  if (qa) qa.innerHTML = sections.map(sec => `<button class="nav-btn" onclick="quickAdd('${sec.id}')"><span class="icon" style="color:${sec.colour}">●</span> ${esc(sec.label)}</button>`).join('');
+}
+
+function sectionHTML(sec) {
+  const safeId = CSS.escape(sec.id);
+  return `<div class="section" id="sec-${sec.id}" draggable="true" data-secid="${sec.id}">
+    <div class="section-header">
+      <div class="section-header-left">
+        <span class="section-drag-handle" title="Drag to reorder">⠿</span>
+        <div class="section-title" style="color:${sec.colour}">${esc(sec.label)}</div>
+      </div>
+      <div class="section-actions">
+        <button class="section-action-btn" onclick="openEditSection('${sec.id}')" title="Edit">✎</button>
+        ${!sec.fixed ? `<button class="section-action-btn" onclick="toggleHideSection('${sec.id}')" title="Hide">○</button>` : ''}
+        ${!sec.fixed ? `<button class="section-action-btn" onclick="deleteSection('${sec.id}')" title="Delete" style="color:#c0392b">×</button>` : ''}
+      </div>
+    </div>
+    <div class="add-row">
+      <input id="input-${sec.id}" placeholder="Add to ${esc(sec.label)}..." onkeydown="if(event.key==='Enter')addTask('${sec.id}')"/>
+      <div class="deadline-btn" id="dbtn-${sec.id}" title="Set deadline"><span>📅</span><input type="date" id="deadline-${sec.id}" onchange="deadlineChanged('${sec.id}',this)"></div>
+      <button class="btn btn-accent btn-sm" onclick="addTask('${sec.id}')">+ Add</button>
+    </div>
+    <div class="task-list" id="list-${sec.id}"></div>
+  </div>`;
+}
+
+function renderSectionTasks() {
+  const sections = getSections().filter(s => !s.hidden);
+  const tasks = getTasks(TODAY);
+  sections.forEach(sec => {
+    const el = document.getElementById('list-' + sec.id);
+    if (!el) return;
+    const list = tasks.filter(t => t.tag === sec.id);
+    el.innerHTML = list.length ? list.map(taskHTML).join('') : '<div class="empty-state">Nothing here yet</div>';
+  });
+}
+
+// ══════════════════════════════════════════
+// Drag and drop reordering
+// ══════════════════════════════════════════
+let _dragSec = null;
+function initDragDrop() {
+  document.querySelectorAll('#sections-container .section').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      _dragSec = el.dataset.secid;
+      setTimeout(() => el.classList.add('dragging'), 0);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('dragging');
+      document.querySelectorAll('.section.drag-over').forEach(s => s.classList.remove('drag-over'));
+    });
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (el.dataset.secid !== _dragSec) el.classList.add('drag-over');
+    });
+    el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      el.classList.remove('drag-over');
+      if (!_dragSec || _dragSec === el.dataset.secid) return;
+      const sections = getSections();
+      const fromIdx = sections.findIndex(s => s.id === _dragSec);
+      const toIdx = sections.findIndex(s => s.id === el.dataset.secid);
+      if (fromIdx < 0 || toIdx < 0) return;
+      const [moved] = sections.splice(fromIdx, 1);
+      sections.splice(toIdx, 0, moved);
+      setSections(sections);
+      renderSections();
+      renderSectionTasks();
+    });
+  });
+}
+
+// ══════════════════════════════════════════
+// Section manager UI
+// ══════════════════════════════════════════
+function openSectionManager() {
+  renderSectionManagerList();
+  renderColourGrid('sm-colour-grid', null, (c) => { _newSectionColour = c; });
+  _newSectionColour = SECTION_COLOURS[Math.floor(Math.random() * SECTION_COLOURS.length)];
+  document.getElementById('section-manager-overlay').classList.add('show');
+  setTimeout(() => document.getElementById('sm-new-name').focus(), 50);
+}
+
+function renderSectionManagerList() {
+  const el = document.getElementById('sm-section-list');
+  const sections = getSections();
+  el.innerHTML = sections.map(sec => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <span style="width:12px;height:12px;border-radius:50%;background:${sec.colour};flex-shrink:0"></span>
+      <span style="flex:1;font-size:13px;${sec.hidden?'opacity:0.4;text-decoration:line-through':''}">${esc(sec.label)}</span>
+      <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--faint)">${sec.fixed?'default':''}</span>
+      <button class="section-action-btn" onclick="openEditSection('${sec.id}');closeOverlay('section-manager-overlay')" title="Edit">✎</button>
+      <button class="section-action-btn" onclick="toggleHideSection('${sec.id}');renderSectionManagerList()" title="${sec.hidden?'Show':'Hide'}">${sec.hidden?'◉':'○'}</button>
+      ${!sec.fixed ? `<button class="section-action-btn" onclick="deleteSection('${sec.id}');renderSectionManagerList()" title="Delete" style="color:#c0392b">×</button>` : ''}
+    </div>`).join('');
+}
+
+let _newSectionColour = SECTION_COLOURS[0];
+function addCustomSection() {
+  const name = document.getElementById('sm-new-name').value.trim();
+  if (!name) return;
+  const sections = getSections();
+  const id = 'custom_' + Date.now();
+  sections.push({ id, label: name, colour: _newSectionColour, fixed: false });
+  setSections(sections);
+  document.getElementById('sm-new-name').value = '';
+  renderSectionManagerList();
+  renderSections();
+  renderSectionTasks();
+}
+
+function toggleHideSection(id) {
+  const sections = getSections();
+  const sec = sections.find(s => s.id === id);
+  if (sec) { sec.hidden = !sec.hidden; setSections(sections); renderSections(); renderSectionTasks(); }
+}
+
+function deleteSection(id) {
+  if (!confirm('Delete this section? Tasks in it won\'t be deleted — they\'ll just be unassigned.')) return;
+  const sections = getSections().filter(s => s.id !== id);
+  setSections(sections);
+  renderSectionManagerList();
+  renderSections();
+  renderSectionTasks();
+}
+
+// ══════════════════════════════════════════
+// Edit section
+// ══════════════════════════════════════════
+let _editSectionId = null;
+let _editSectionColour = null;
+
+function openEditSection(id) {
+  const sections = getSections();
+  const sec = sections.find(s => s.id === id);
+  if (!sec) return;
+  _editSectionId = id;
+  _editSectionColour = sec.colour;
+  document.getElementById('edit-section-name').value = sec.label;
+  renderColourGrid('edit-colour-grid', sec.colour, (c) => { _editSectionColour = c; });
+  document.getElementById('edit-section-overlay').classList.add('show');
+  setTimeout(() => document.getElementById('edit-section-name').focus(), 50);
+}
+
+function saveEditSection() {
+  const name = document.getElementById('edit-section-name').value.trim();
+  if (!name || !_editSectionId) return;
+  const sections = getSections();
+  const sec = sections.find(s => s.id === _editSectionId);
+  if (sec) { sec.label = name; sec.colour = _editSectionColour; setSections(sections); }
+  closeOverlay('edit-section-overlay');
+  renderSections();
+  renderSectionTasks();
+}
+
+function renderColourGrid(containerId, selected, onSelect) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = SECTION_COLOURS.map(c => `
+    <div class="colour-swatch${c===selected?' selected':''}" style="background:${c}" 
+      onclick="this.parentNode.querySelectorAll('.colour-swatch').forEach(s=>s.classList.remove('selected'));this.classList.add('selected');(${onSelect.toString()})(\'${c}\')" 
+      title="${c}"></div>`).join('');
+}
+
+function getTasks(d){return dbGet('tasks_'+d,[]);}
+function setTasks(d,a){dbSet('tasks_'+d,a);}
+function getTriage(d){return dbGet('triage_'+d,'');}
+function setTriage(d,t){dbSet('triage_'+d,t);}
+function getDays(){return dbGet('days',[]);}
+function addDay(d){const days=getDays();if(!days.includes(d)){days.unshift(d);days.sort((a,b)=>b.localeCompare(a));dbSet('days',days);}}
+
+const TODAY=new Date().toISOString().slice(0,10);
+
+// ══════════════════════════════════════════
+// Init & rollover
+// ══════════════════════════════════════════
+async function init(){
+  const saved=LC.get('gh_token',null);
+  if(saved){
+    _token=saved;
+    document.getElementById('signin-screen').style.display='none';
+    document.getElementById('app-shell').style.display='block';
+    await loadFromGist();
+    finishInit();
+  }
+}
+
+function finishInit(){checkRollover();renderSections();renderToday();renderHeader();renderStreak();renderHistory();}
+
+function checkRollover(){
+  const last=dbGet('last_closed',null);
+  if(!last||last===TODAY||dbGet('rolled_to_'+TODAY,false))return;
+  const prev=getTasks(last).filter(t=>!t.done);
+  if(!prev.length)return;
+  const rolled=prev.map(t=>({...t,id:Date.now()+Math.random(),done:false,rolled:true,rolledFrom:last}));
+  setTasks(TODAY,[...rolled,...getTasks(TODAY)]);
+  dbSet('rolled_to_'+TODAY,true);addDay(TODAY);
+}
+
+// ══════════════════════════════════════════
+// Render
+// ══════════════════════════════════════════
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MSHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WDAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const WSHORT=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function renderHeader(){
+  const d=new Date();
+  document.getElementById('day-label').textContent=WDAYS[d.getDay()]+', '+d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear();
+  const tasks=getTasks(TODAY);
+  const done=tasks.filter(t=>t.done).length;
+  const rolled=tasks.filter(t=>t.rolled&&!t.done).length;
+  document.getElementById('day-title').innerHTML=`Good ${greet()}, <strong>Emma</strong>`;
+  document.getElementById('day-stats').innerHTML=
+    `<span class="stat"><span>${done}</span> done</span>`+
+    `<span class="stat"><span>${tasks.length-done}</span> remaining</span>`+
+    (rolled?`<span class="stat" style="color:var(--rolled)"><span>${rolled}</span> rolled</span>`:'');
+  const focus=tasks.find(t=>t.priority&&!t.done)||tasks.find(t=>!t.done);
+  document.getElementById('focus-task-text').innerHTML=focus
+    ?`${esc(focus.text)} <span style="opacity:0.5;font-size:11px;font-family:'DM Mono',monospace">[${focus.tag}]</span>`
+    :'<span class="focus-empty">Add a task to get started</span>';
+  if(rolled>0){
+    document.getElementById('rollover-banner').style.display='flex';
+    document.getElementById('rollover-count').textContent=rolled+' task'+(rolled>1?'s':'');
+  }else{document.getElementById('rollover-banner').style.display='none';}
+  const rb=document.getElementById('rolled-badge');
+  if(rolled>0){rb.textContent=rolled+' rolled';rb.style.display='';}else{rb.style.display='none';}
+}
+
+function greet(){const h=new Date().getHours();return h<12?'morning':h<17?'afternoon':'evening';}
+
+function renderToday(){
+  renderSectionTasks();
+  renderHeader();
+}
+
+function deadlineBadge(t){
+  if(!t.deadline||t.done)return'';
+  const today=new Date(TODAY+'T00:00:00');
+  const due=new Date(t.deadline+'T00:00:00');
+  const diff=Math.round((due-today)/(1000*60*60*24));
+  let cls='task-deadline';
+  let label='';
+  if(diff<0){cls+=' overdue';label=`⚠ overdue ${fmtShort(t.deadline)}`;}
+  else if(diff===0){cls+=' due-soon';label='due today';}
+  else if(diff<=3){cls+=' due-soon';label=`due ${fmtShort(t.deadline)}`;}
+  else{label=`due ${fmtShort(t.deadline)}`;}
+  return`<span class="${cls}">${label}</span>`;
+}
+
+function taskHTML(t){
+  const rd=t.rolledFrom?fmtShort(t.rolledFrom):'';
+  const sections=getSections().filter(s=>!s.hidden);
+  const moveItems=sections.map(s=>`<div class="move-dropdown-item${s.id===t.tag?' current':''}" onclick="event.stopPropagation();moveTask('${t.id}','${s.id}')"><span class="move-dot" style="background:${s.colour}"></span>${esc(s.label)}</div>`).join('');
+  return`<div class="task-item${t.done?' is-done':''}${t.rolled&&!t.done?' is-rolled':''}" onclick="toggleTask('${t.id}')" ondblclick="event.stopPropagation();startEditTask('${t.id}',this)">
+    <div class="task-check">${t.done?'✓':''}</div>
+    <span class="task-text" id="task-text-${t.id}">${esc(t.text)}</span>
+    ${t.rolled&&!t.done?`<span class="task-rolled-badge">↻ ${rd}</span>`:''}
+    ${deadlineBadge(t)}
+    <span class="task-priority${t.priority?' on':''}" onclick="event.stopPropagation();togglePriority('${t.id}')" title="Priority">★</span>
+    <div class="task-move-wrap">
+      <button class="task-move" onclick="event.stopPropagation();toggleMoveDropdown('${t.id}')" title="Move to section">⇄</button>
+      <div class="move-dropdown" id="move-dd-${t.id}">${moveItems}</div>
+    </div>
+    <button class="task-del" onclick="event.stopPropagation();deleteTask('${t.id}')" title="Delete">×</button>
+  </div>`;
+}
+
+function fmtShort(s){const d=new Date(s+'T12:00:00');return d.getDate()+' '+MSHORT[d.getMonth()];}
+function fmtFull(s){const d=new Date(s+'T12:00:00');return WSHORT[d.getDay()]+' '+d.getDate()+' '+MSHORT[d.getMonth()]+' '+d.getFullYear();}
+
+// ══════════════════════════════════════════
+// Task actions
+// ══════════════════════════════════════════
+function addTask(tag){
+  const inp=document.getElementById('input-'+tag);
+  const text=inp.value.trim();if(!text)return;
+  const dlInp=document.getElementById('deadline-'+tag);
+  const deadline=dlInp?dlInp.value:'';
+  const tasks=getTasks(TODAY);
+  tasks.push({id:Date.now()+Math.random(),text,tag,done:false,rolled:false,priority:false,deadline:deadline||null});
+  setTasks(TODAY,tasks);addDay(TODAY);inp.value='';
+  if(dlInp){dlInp.value='';const btn=document.getElementById('dbtn-'+tag);if(btn)btn.classList.remove('has-date');}
+  renderToday();renderHistory();
+}
+function toggleTask(id){
+  const tasks=getTasks(TODAY);
+  const t=tasks.find(t=>String(t.id)===String(id));
+  if(t){t.done=!t.done;setTasks(TODAY,tasks);renderToday();renderHistory();}
+}
+function togglePriority(id){
+  const tasks=getTasks(TODAY);
+  const t=tasks.find(t=>String(t.id)===String(id));
+  if(t){t.priority=!t.priority;setTasks(TODAY,tasks);renderToday();}
+}
+
+function startEditTask(id, itemEl){
+  // Don't open a second editor if one is already open
+  if(itemEl.classList.contains('is-editing'))return;
+  const textEl=document.getElementById('task-text-'+id);
+  if(!textEl)return;
+  const currentText=textEl.textContent;
+  itemEl.classList.add('is-editing');
+  // Replace the text span with an input
+  const input=document.createElement('input');
+  input.type='text';
+  input.className='task-edit-input';
+  input.value=currentText;
+  textEl.replaceWith(input);
+  input.focus();
+  input.select();
+  const commit=()=>commitEditTask(id, input, itemEl);
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){e.preventDefault();commit();}
+    if(e.key==='Escape'){e.preventDefault();cancelEditTask(id, currentText, input, itemEl);}
+    e.stopPropagation();
+  });
+  input.addEventListener('blur', commit);
+  input.addEventListener('click', e=>e.stopPropagation());
+}
+
+function commitEditTask(id, input, itemEl){
+  const newText=input.value.trim();
+  itemEl.classList.remove('is-editing');
+  if(!newText){
+    // Empty — restore original and bail
+    renderToday();return;
+  }
+  const tasks=getTasks(TODAY);
+  const t=tasks.find(t=>String(t.id)===String(id));
+  if(t){t.text=newText;setTasks(TODAY,tasks);renderToday();renderHistory();}
+}
+
+function cancelEditTask(id, originalText, input, itemEl){
+  itemEl.classList.remove('is-editing');
+  renderToday();
+}
+function deleteTask(id){
+  setTasks(TODAY,getTasks(TODAY).filter(t=>String(t.id)!==String(id)));
+  renderToday();renderHistory();
+}
+
+function moveTask(id, newTag){
+  closeAllMoveDropdowns();
+  const tasks=getTasks(TODAY);
+  const t=tasks.find(t=>String(t.id)===String(id));
+  if(t&&t.tag!==newTag){t.tag=newTag;setTasks(TODAY,tasks);renderToday();renderHistory();}
+}
+
+function toggleMoveDropdown(id){
+  const dd=document.getElementById('move-dd-'+id);
+  if(!dd)return;
+  const isOpen=dd.classList.contains('open');
+  closeAllMoveDropdowns();
+  if(!isOpen)dd.classList.add('open');
+}
+
+function closeAllMoveDropdowns(){
+  document.querySelectorAll('.move-dropdown.open').forEach(d=>d.classList.remove('open'));
+}
+
+// ══════════════════════════════════════════
+// End of day
+// ══════════════════════════════════════════
+function endOfDay(){
+  const tasks=getTasks(TODAY);
+  const done=tasks.filter(t=>t.done).length;
+  const undone=tasks.filter(t=>!t.done);
+  document.getElementById('eod-msg').textContent=`You completed ${done} task${done!==1?'s':''} today. ${undone.length} unfinished task${undone.length!==1?'s':''} will roll to tomorrow.`;
+  document.getElementById('eod-detail').innerHTML=undone.length?undone.map(t=>`↻ ${esc(t.text)}`).join('<br>'):'All done — clean slate! 🎉';
+  document.getElementById('eod-overlay').classList.add('show');
+}
+function confirmEndOfDay(){
+  dbSet('last_closed',TODAY);addDay(TODAY);
+  closeOverlay('eod-overlay');renderStreak();
+  alert('Day closed. Unfinished tasks will appear tomorrow. See you then! 👋');
+}
+
+// ══════════════════════════════════════════
+// Quick add
+// ══════════════════════════════════════════
+let _qaTag='work';
+function quickAdd(tag){
+  _qaTag=tag;
+  const TL=getTL();
+  document.getElementById('qa-title').textContent='Add '+(TL[tag]||tag)+' task';
+  const sections=getSections().filter(s=>!s.hidden);
+  document.getElementById('qa-tag-pills').innerHTML=sections.map(s=>`<button class="btn btn-sm${s.id===tag?' btn-accent':''}" style="${s.id===tag?'':'border-color:'+s.colour+';color:'+s.colour}" onclick="setQaTag('${s.id}',this)">${esc(s.label)}</button>`).join('');
+  document.getElementById('qa-input').value='';
+  document.getElementById('quickadd-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('qa-input').focus(),50);
+}
+function setQaTag(tag,btn){
+  _qaTag=tag;
+  const TL=getTL();
+  document.querySelectorAll('#qa-tag-pills button').forEach(b=>b.classList.remove('btn-accent'));
+  btn.classList.add('btn-accent');
+  document.getElementById('qa-title').textContent='Add '+(TL[tag]||tag)+' task';
+}
+function confirmQuickAdd(){
+  const text=document.getElementById('qa-input').value.trim();if(!text)return;
+  const deadline=document.getElementById('qa-deadline').value||null;
+  const tasks=getTasks(TODAY);
+  tasks.push({id:Date.now()+Math.random(),text,tag:_qaTag,done:false,rolled:false,priority:false,deadline});
+  setTasks(TODAY,tasks);addDay(TODAY);
+  closeOverlay('quickadd-overlay');
+  document.getElementById('qa-deadline').value='';
+  renderToday();renderHistory();
+}
+
+// ══════════════════════════════════════════
+// Inbox triage
+// ══════════════════════════════════════════
+function triageTab(tab,el){
+  document.querySelectorAll('.triage-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.triage-pane').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tpane-'+tab).classList.add('active');
+  if(tab==='saved')renderInboxSaved();
+}
+function saveTriage(){
+  const txt=document.getElementById('triage-input').value.trim();if(!txt)return;
+  setTriage(TODAY,txt);addDay(TODAY);
+  document.querySelectorAll('.triage-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.triage-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.triage-tab')[1].classList.add('active');
+  document.getElementById('tpane-saved').classList.add('active');
+  renderInboxSaved();
+}
+function clearTriage(){document.getElementById('triage-input').value='';document.getElementById('action-preview').style.display='none';}
+
+function extractActionItems(text){
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>4);
+  const items=[];
+  const av=/^(action|to.?do|task|follow.?up|reply|respond|send|review|check|update|prepare|schedule|book|arrange|confirm|chase|submit|complete|draft|write|call|email|meet|discuss|approve|sign|share|remind|organise|organize|contact|invite|set up)\b/i;
+  const bm=/^[-•*▪◦▸→►]\s+(.+)/;
+  const nm=/^\d+[.)]\s+(.+)/;
+  const nw=/\b(needs?|required?|due|urgent|asap|priority|please|action needed)\b/i;
+  lines.forEach(line=>{
+    let c=line.replace(/\*\*/g,'').replace(/\*/g,'').replace(/_/g,'').trim();
+    if(c.length<8||/^(inbox|summary|triage|email|subject|from|date|re:|fw:)/i.test(c)||(c.endsWith(':')&&c.length<40))return;
+    let candidate=null;
+    const bMatch=c.match(bm);if(bMatch)candidate=bMatch[1].trim();
+    const nMatch=c.match(nm);if(nMatch)candidate=nMatch[1].trim();
+    if(!candidate&&av.test(c))candidate=c;
+    if(!candidate&&nw.test(c))candidate=c;
+    if(candidate&&candidate.length>8&&candidate.length<200)
+      items.push({text:candidate,tag:guessTag(candidate),added:false,id:'ai_'+Math.random().toString(36).slice(2)});
+  });
+  const unique=[];
+  items.forEach(item=>{if(!unique.find(u=>sim(u.text,item.text)>0.7))unique.push(item);});
+  return unique.slice(0,20);
+}
+function guessTag(t){
+  const s=t.toLowerCase();
+  if(/\b(staff|team|1:1|report|hr|appraisal|meeting with|line report|manage)\b/.test(s))return'staff';
+  if(/\b(school|pick.?up|drop.?off|daughter|teacher|parent|homework|childcare|kids?)\b/.test(s))return'school';
+  if(/\b(home|house|shop|shopping|doctor|dentist|bills?|groceries)\b/.test(s))return'home';
+  if(/\b(exercise|gym|run|relax|self.care|me time|wellbeing|read|rest)\b/.test(s))return'me';
+  const sections=getSections().filter(s=>!s.hidden);
+  return sections.length?sections[0].id:'work';
+}
+function sim(a,b){
+  a=a.toLowerCase();b=b.toLowerCase();
+  if(a===b)return 1;if(a.includes(b)||b.includes(a))return 0.85;
+  const wa=new Set(a.split(/\s+/)),wb=new Set(b.split(/\s+/));
+  let c=0;wa.forEach(w=>{if(wb.has(w))c++;});
+  return(2*c)/(wa.size+wb.size);
+}
+
+let _ai=[];
+function previewActions(){
+  const txt=document.getElementById('triage-input').value.trim();
+  if(!txt){document.getElementById('action-preview').style.display='none';return;}
+  _ai=extractActionItems(txt);
+  if(!_ai.length){document.getElementById('action-preview').style.display='none';return;}
+  document.getElementById('action-preview').style.display='block';
+  renderActionItems();
+}
+function renderActionItems(){
+  const sections=getSections().filter(s=>!s.hidden);
+  document.getElementById('action-items-list').innerHTML=_ai.map((item,i)=>`
+    <div class="action-item${item.added?' added':''}">
+      <span class="action-item-text">${esc(item.text)}</span>
+      ${!item.added?`
+        <select class="action-tag-select" id="atag-${item.id}" onchange="_ai[${i}].tag=this.value">
+          ${sections.map(s=>`<option value="${s.id}"${item.tag===s.id?' selected':''}>${esc(s.label)}</option>`).join('')}
+        </select>
+        <button class="action-add-btn" onclick="addAI('${item.id}',${i})">+ Add</button>
+      `:'<span class="action-add-btn done-btn">✓ Added</span>'}
+    </div>`).join('');
+}
+function addAI(id,i){
+  const item=_ai[i];if(!item||item.added)return;
+  const tag=document.getElementById('atag-'+id)?.value||item.tag;
+  const tasks=getTasks(TODAY);
+  tasks.push({id:Date.now()+Math.random(),text:item.text,tag,done:false,rolled:false,priority:false,fromTriage:true});
+  setTasks(TODAY,tasks);addDay(TODAY);_ai[i].added=true;renderActionItems();renderToday();renderHistory();
+}
+function renderInboxSaved(){
+  const el=document.getElementById('triage-saved-content');
+  const td=getDays().filter(d=>getTriage(d));
+  if(!td.length){el.innerHTML='<div class="empty-state">No saved triages yet.</div>';return;}
+  el.innerHTML=td.map(d=>`
+    <div style="margin-bottom:16px">
+      <div class="triage-date-label">${fmtFull(d)}${d===TODAY?' — today':''}</div>
+      <div class="triage-saved-text">${esc(getTriage(d))}</div>
+    </div><hr style="border:none;border-top:1px solid var(--border);margin-bottom:16px">`).join('');
+}
+
+// ══════════════════════════════════════════
+// History
+// ══════════════════════════════════════════
+function renderHistory(){
+  const el=document.getElementById('history-list');
+  const days=getDays();
+  if(!days.length){el.innerHTML='<div class="empty-state">No history yet.</div>';return;}
+  el.innerHTML=days.map(d=>{
+    const tasks=getTasks(d);const done=tasks.filter(t=>t.done).length;const undone=tasks.filter(t=>!t.done);const triage=getTriage(d);
+    return`<div class="history-day">
+      <div class="history-day-header" onclick="toggleHDay('hday-${d}',this)">
+        <span class="history-day-date">${fmtFull(d)}${d===TODAY?' <span style="color:var(--accent);font-size:10px;margin-left:6px">TODAY</span>':''}</span>
+        <div style="display:flex;align-items:center;gap:16px">
+          <span class="history-day-summary">
+            <span style="color:var(--green)">✓ ${done}</span>
+            ${undone.length?`<span style="color:var(--rolled)">↻ ${undone.length}</span>`:''}
+            ${triage?'<span style="color:var(--accent)">◎</span>':''}
+          </span>
+          <span class="chev" id="chev-${d}">▾</span>
+        </div>
+      </div>
+      <div class="history-day-body" id="hday-${d}">
+        ${tasks.length?tasks.map(t=>`<div class="history-task-row">
+          <span class="${t.done?'h-done':t.rolled?'h-rolled':'h-skip'}">${t.done?'✓':t.rolled?'↻':'○'}</span>
+          <span class="task-tag tag-${t.tag}" style="font-size:10px">${t.tag}</span>
+          <span style="flex:1">${esc(t.text)}</span>
+        </div>`).join(''):'<div class="empty-state">No tasks</div>'}
+        ${triage?`<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          <div class="triage-date-label" style="margin-bottom:6px">Inbox triage</div>
+          <div style="font-size:13px;color:var(--muted);white-space:pre-wrap;line-height:1.7">${esc(triage)}</div>
+        </div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleHDay(id,header){
+  document.getElementById(id).classList.toggle('open');
+  header.querySelector('.chev').classList.toggle('open');
+}
+
+// ══════════════════════════════════════════
+// Streak, nav, utils
+// ══════════════════════════════════════════
+function renderStreak(){
+  const days=getDays();let streak=0;
+  for(let i=0;i<90;i++){
+    const s=new Date(Date.now()-i*86400000).toISOString().slice(0,10);
+    if(days.includes(s))streak++;else if(i>0)break;
+  }
+  document.getElementById('streak-display').innerHTML=`<strong>${streak}</strong> day streak`;
+}
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  if(name==='history')renderHistory();
+  if(name==='inbox')renderInboxSaved();
+}
+function closeOverlay(id){document.getElementById(id).classList.remove('show');}
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('show');}));
+document.addEventListener('click',e=>{if(!e.target.closest('.task-move-wrap'))closeAllMoveDropdowns();});
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ══════════════════════════════════════════
+// Export / Import
+// ══════════════════════════════════════════
+function exportData(){
+  const days=getDays();
+  const backup={version:2,exported:new Date().toISOString(),days,last_closed:dbGet('last_closed',null)};
+  days.forEach(d=>{
+    backup['tasks_'+d]=getTasks(d);
+    const tr=getTriage(d);if(tr)backup['triage_'+d]=tr;
+    const r=dbGet('rolled_to_'+d,null);if(r)backup['rolled_to_'+d]=r;
+  });
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}));
+  a.download=`myday-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+let _importData=null;
+function importData(ev){
+  const file=ev.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.version||!data.days){alert('Not a valid My Day backup.');return;}
+      _importData=data;
+      const dt=data.exported?new Date(data.exported).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'unknown';
+      document.getElementById('import-preview').innerHTML=`Backup from <strong>${dt}</strong> · <strong>${data.days.length}</strong> days`;
+      document.getElementById('import-overlay').classList.add('show');
+    }catch(e){alert('Could not read backup file.');}
+  };
+  r.readAsText(file);ev.target.value='';
+}
+function confirmImport(){
+  if(!_importData)return;
+  const data=_importData;
+  const allDays=[...new Set([...getDays(),...data.days])].sort((a,b)=>b.localeCompare(a));
+  dbSet('days',allDays);
+  data.days.forEach(d=>{
+    if(!dbGet('tasks_'+d,null)&&data['tasks_'+d])dbSet('tasks_'+d,data['tasks_'+d]);
+    if(!dbGet('triage_'+d,null)&&data['triage_'+d])dbSet('triage_'+d,data['triage_'+d]);
+  });
+  if(!dbGet('last_closed',null)&&data.last_closed)dbSet('last_closed',data.last_closed);
+  _importData=null;closeOverlay('import-overlay');finishInit();
+  alert('Backup restored!');
+}
+
+function deadlineChanged(tag, input) {
+  const btn = document.getElementById('dbtn-' + tag);
+  if (btn) btn.classList.toggle('has-date', !!input.value);
+}
+
+// Boot
+window.addEventListener('load',()=>{
+  init();
+});
+</script>
+</body>
+</html>
